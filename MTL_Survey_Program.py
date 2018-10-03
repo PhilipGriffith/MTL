@@ -211,14 +211,14 @@ def convert_to_dxf(fname):
         points = processor(fname)
         if points:
             dxf_name = make_dxf(fname, points)
-            print '\n  {} was converted to {}'.format(fname, dxf_name)
+            print('\n  {} was converted to {}'.format(fname, dxf_name))
         else:
-            print '\n  {} does not exist.'.format(fname)
+            print('\n  {} does not exist.'.format(fname))
             convert_single('dxf')
     elif f_lower.endswith('.dxf') or f_lower.endswith('.py'):
         pass
     else:
-        print '\n  {} is not a valid file type.'.format(fname)
+        print('\n  {} is not a valid file type.'.format(fname))
         convert_single('dxf')
         
     return
@@ -231,14 +231,14 @@ def convert_to_pnt(fname):
         points = processor(fname)
         if points:
             pnt_name = make_pnt(fname, points)
-            print '\n  {} was converted to {}'.format(fname, pnt_name)
+            print('\n  {} was converted to {}'.format(fname, pnt_name))
         else:
-            print '\n  {} does not exist.'.format(fname)
+            print('\n  {} does not exist.'.format(fname))
             convert_single('pnt')
     elif f_lower.endswith('.pnt') or f_lower.endswith('.py'):
         pass
     else:
-        print '\n  {} is not a valid file type.'.format(fname)
+        print('\n  {} is not a valid file type.'.format(fname))
         convert_single('pnt')
 
     return
@@ -246,7 +246,7 @@ def convert_to_pnt(fname):
 
 def convert_single(ftype=None):
 
-    fname = raw_input('Enter the file to convert: ')
+    fname = input('Enter the file to convert: ')
     if fname:
         if ftype == 'dxf':
             convert_to_dxf(fname)
@@ -280,19 +280,19 @@ def get_lines(fname, search=None, datum=True, multi=False):
             data = None
             if datum and search:
                 if search in line and 'datum' in line.lower():
-                    print line.replace(',', ', ')
+                    print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
                     data = format_numbers(split_line)
             elif datum:
                 if 'datum' in line.lower():
-                    print line.replace(',', ', ')
+                    print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
                     data = format_numbers(split_line)
             else:
                 if search in line:
-                    print line.replace(',', ', ')
+                    print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
                     data = format_numbers(split_line)
@@ -320,14 +320,14 @@ def get_lines(fname, search=None, datum=True, multi=False):
 def get_stats(values, name):
 
     x, y, z = values
-    print '\n{} result(s) found for {}:\n'.format(len(x), name)
-    print '\t\tNorthing\tEasting\t\tElevation'
-    print '-' * 60
-    print 'Mean\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(np.mean(y), np.mean(x), np.mean(z))
-    print 'Std Dev.\t{:.3f}\t\t{:.3f}\t\t{:.3f}'.format(np.std(y), np.std(x), np.std(z))
-    print
-    print 'Min\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(min(y), min(x), min(z))    
-    print 'Max\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(max(y), max(x), max(z))
+    print('\n{} result(s) found for {}:\n'.format(len(x), name))
+    print('\t\tNorthing\tEasting\t\tElevation')
+    print('-' * 60)
+    print('Mean\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(np.mean(y), np.mean(x), np.mean(z)))
+    print('Std Dev.\t{:.3f}\t\t{:.3f}\t\t{:.3f}'.format(np.std(y), np.std(x), np.std(z)))
+    print()
+    print('Min\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(min(y), min(x), min(z)))
+    print('Max\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(max(y), max(x), max(z)))
 
     return
 
@@ -344,52 +344,52 @@ def get_multi_stats(datums):
 def choices(fname=None):
 
         if fname:
-            print '\nWithin {}:'.format(fname)
-        print
-        print ' 1: Get statistics for a datum'
-        print ' 2: Get statistics for all datums'
-        print ' 3: Get statistics for a point'
+            print('\nWithin {}:'.format(fname))
+        print()
+        print(' 1: Get statistics for a datum')
+        print(' 2: Get statistics for all datums')
+        print(' 3: Get statistics for a point')
         
         return
 
 
 def get_stats_single():
 
-    fname = raw_input('Enter the file to analyze: ')
+    fname = input('Enter the file to analyze: ')
     if fname:
         options = (1, 2, 3)
         option = 1
         while option in options:
             try:
                 choices(fname)
-                option = int(raw_input('\nSelect an option: '))
+                option = int(input('\nSelect an option: '))
             except ValueError:
                 return
             if option == 1:
-                datum = raw_input('\nEnter a datum to search: ')
+                datum = input('\nEnter a datum to search: ')
                 if datum:
-                    print '\nResults:\n'
+                    print('\nResults:\n')
                     values = get_lines(fname, search=datum)
                     if values[0]:
                         get_stats(values, datum)
                     else:
-                        print 'No results found.'
+                        print('No results found.')
             elif option == 2:
-                print '\nResults:\n'
+                print('\nResults:\n')
                 coords = get_lines(fname, multi=True)
                 if coords:
                     get_multi_stats(coords)
                 else:
-                    print 'No results found.'
+                    print('No results found.')
             elif option == 3:
-                point = raw_input('\nEnter a point to search: ')
+                point = input('\nEnter a point to search: ')
                 if point:
-                    print '\nResults:\n'
+                    print('\nResults:\n')
                     values = get_lines(fname, search=point, datum=False)
                     if values[0]:
                         get_stats(values, point)
                     else:
-                        print 'No results found.'
+                        print('No results found.')
             else:
                 return
     return
@@ -405,14 +405,14 @@ def get_stats_all():
         all_z = []
         try:
             choices()
-            option = int(raw_input('\nSelect an option: '))
+            option = int(input('\nSelect an option: '))
         except ValueError:
             return
         if option == 1:
-            datum = raw_input('\nEnter a datum to search: ')
+            datum = input('\nEnter a datum to search: ')
             if datum:
-                print '\nResults:\n'
-                for root, dirs, fnmes in os.path.walk('./'):
+                print('\nResults:\n')
+                for root, dirs, fnames in os.path.walk('./'):
                     for fname in fnames:
                         values = get_lines(fname, search=datum)
                         all_x.append(values[0])
@@ -422,23 +422,23 @@ def get_stats_all():
                     values = (all_x, all_y, all_z)
                     get_stats(values, datum)
                 else:
-                    print 'No results found.'
+                    print('No results found.')
         elif option == 2:
-            print '\nResults:\n'
+            print('\nResults:\n')
             coords = get_lines(fname, multi=True)
             if coords:
                 get_multi_stats(coords)
             else:
-                print 'No results found.'
+                print('No results found.')
         elif option == 3:
-            point = raw_input('\nEnter a point to search: ')
+            point = input('\nEnter a point to search: ')
             if point:
-                print '\nResults:\n'
+                print('\nResults:\n')
                 values = get_lines(fname, search=point, datum=False)
                 if values[0]:
                     get_stats(values, point)
                 else:
-                    print 'No results found.'
+                    print('No results found.')
         else:
             return
     return
@@ -449,18 +449,18 @@ def main():
 
     def choices():
 
-        print
-        print '--------------------------'
-        print 'Mt Lykaion Survey Program'
-        print '--------------------------\n'
-        print 'Current folder: {}\n'.format(os.getcwd())
-        print 'Within the current folder:\n'
-        print ' 1: Convert a file to DXF format'
-        print ' 2: Convert all files to DXF format'
-        print ' 3: Convert a file to PNT format'
-        print ' 4: Convert all files to PNT format'
-        print ' 5: Get point statistics from a file'
-        print ' 6: Get point statistics from all files'
+        print()
+        print('--------------------------')
+        print('Mt Lykaion Survey Program')
+        print('--------------------------\n')
+        print('Current folder: {}\n'.format(os.getcwd()))
+        print('Within the current folder:\n')
+        print(' 1: Convert a file to DXF format')
+        print(' 2: Convert all files to DXF format')
+        print(' 3: Convert a file to PNT format')
+        print(' 4: Convert all files to PNT format')
+        print(' 5: Get point statistics from a file')
+        print(' 6: Get point statistics from all files')
 
         return
 
@@ -471,7 +471,7 @@ def main():
 
         choices()
         try:
-            option = int(raw_input('\nSelect an option: '))
+            option = int(input('\nSelect an option: '))
         except ValueError:
             return
 
@@ -494,4 +494,3 @@ def main():
 if __name__ == '__main__':
 
     main()
-
