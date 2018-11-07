@@ -129,11 +129,16 @@ def get_points_dxf(lines):
     points = []
     for i, line in enumerate(lines):
         if i > 164:
-            line = line.strip()
-            if 'POINTNAMEBLOCK' in line:
-                pnt_line = get_coords(lines[i:i+59])
-                line = ','.join(str(i) for i in pnt_line)
-                points.append(line)
+            try:
+                line = line.strip()
+                if 'POINTNAMEBLOCK' in line:
+                    pnt_line = get_coords(lines[i:i+59])
+                    if pnt_line[0] == 'ACDBENTITY':
+                        pnt_line[0] = lines[i+108].strip().upper()
+                    line = ','.join(str(i) for i in pnt_line)
+                    points.append(line)
+            except ValueError:
+                pass
                 
     return points
 
@@ -247,6 +252,7 @@ def convert_to_pnt(fname):
 def convert_single(ftype=None):
 
     fname = input('Enter the file to convert: ')
+
     if fname:
         if ftype == 'dxf':
             convert_to_dxf(fname)
@@ -444,7 +450,6 @@ def get_stats_all():
     return
 
 
-
 def main():
 
     def choices():
@@ -470,6 +475,7 @@ def main():
     while option in options:
 
         choices()
+
         try:
             option = int(input('\nSelect an option: '))
         except ValueError:
