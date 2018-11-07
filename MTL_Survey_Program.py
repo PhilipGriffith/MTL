@@ -402,7 +402,7 @@ def get_stats_single():
 
 
 def get_stats_all():
-
+    # TODO This still needs work
     options = (1, 2, 3)
     option = 1
     while option in options:
