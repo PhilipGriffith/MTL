@@ -2,59 +2,33 @@ import os
 import numpy as np
 
 
-def make_pointnameblock(num, code, x, y, z):
+class Utils:
 
-    x_offset = x + 0.005
-    point_number_y = y + 0.015
-    elevation_y = y - 0.005
-    description_y = y - 0.025
-        
-    point_code = " 0\nINSERT\n 8\nPoints\n 66\n1\n 2\n" \
-                 "POINTNAMEBLOCK\n 10\n" \
-                 "{2:.4f}\n" \
-                 " 20\n" \
-                 "{3:.4f}\n" \
-                 " 30\n" \
-                 "{4:.4f}\n" \
-                 " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                 " 70\n0\n 2\n" \
-                 "POINT_NUMBER\n 1\n" \
-                 "{0}\n" \
-                 " 10\n" \
-                 "{5:.4f}\n" \
-                 " 20\n" \
-                 "{6:.4f}\n" \
-                 " 30\n" \
-                 "{4:.4f}\n" \
-                 " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                 " 70\n0\n 2\n" \
-                 "ELEVATION\n 1\n" \
-                 "{4:.3f}\n" \
-                 " 10\n" \
-                 "{5:.4f}\n" \
-                 " 20\n" \
-                 "{7:.4f}\n" \
-                 " 30\n" \
-                 "{4:.4f}\n" \
-                 " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                 " 70\n0\n 2\n" \
-                 "DESCRIPTION\n 1\n" \
-                 "{1}\n" \
-                 " 10\n" \
-                 "{5:.4f}\n"  \
-                 " 20\n" \
-                 "{8:.4f}\n" \
-                 " 30\n" \
-                 "{4:.4f}\n" \
-                 "0\nSEQEND\n 6\nCONTINUOUS\n".format(num, code, x, y, z,
-                                                      x_offset, point_number_y,
-                                                      elevation_y, description_y)
-    return point_code
+    @staticmethod
+    def convert2float(data):
+        return float(data[1]), float(data[2]), float(data[3])
+
+    @staticmethod
+    def format_fname(fname, ftype):
+        fname = os.path.splitext(fname)[0]
+        ftype = ftype.lower()
+        fnew = '{}.{}'.format(fname, ftype)
+        if os.path.exists(fnew):
+            index = 1
+            ftemplate = '{}({{}}).{}'.format(fname, ftype)
+            fnew = ftemplate.format(index)
+            while os.path.exists(fnew):
+                index += 1
+                fnew = ftemplate.format(index)
+            return fnew
+        else:
+            return fnew
 
 
-def begin_dxf():
+class DXF(Utils):
 
-    return "0\nSECTION\n2\nHEADER\n 9\n$ACADVER\n 1\nAC1009\n 9\n$EXTMIN\n 10\n" \
+    def __init__(self, points=None):
+        self.start = "0\nSECTION\n2\nHEADER\n 9\n$ACADVER\n 1\nAC1009\n 9\n$EXTMIN\n 10\n" \
             "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$EXTMAX\n 10\n" \
             "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$LIMMIN\n 10\n" \
             "0.00000000\n 20\n0.00000000\n 9\n$LIMMAX\n 10\n12.00000000\n 20\n"\
@@ -71,31 +45,93 @@ def begin_dxf():
             " 0\nATTDEF\n 8\n0\n 40\n0.01000000\n 70\n0\n 3\nDESCRIPTION\n 2\n" \
             "DESCRIPTION\n 1\n\n 10\n0.00000000\n 20\n-0.04000000\n 30\n0.00000000\n" \
             "0\nENDBLK\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"
+        self.end = "0\nENDSEC\n0\nEOF\n"
+        self.points = self.add(points)
 
+    def add(self, data):
+        payload = []
+        if os.path.isdir(data):
+            for root, dirs, fs in os.walk(data):
+                for f in fs:
+                    if self.check_ftype(f):
+                        pnt = self.make_point(os.path.join(root, f))
+                        payload.append(pnt)
+        elif os.path.isfile(data):
+            if self.check_ftype(data):
+                pnt = self.make_point(data)
+                payload.append(pnt)
+        print(payload)
+        return payload
 
-def end_dxf():
+    def check_ftype(self, f):
+        ext = os.path.splitext(f)[1]
+        return True if ext in ('.dxf', '.pnt') else False
 
-    return "0\nENDSEC\n0\nEOF\n"
+    def make_point(self, data):
+        pass
+        return
 
+    @staticmethod
+    def _make_pointnameblock(num, code, x, y, z):
 
-def format_numbers(data):
+        x_offset = x + 0.005
+        point_number_y = y + 0.015
+        elevation_y = y - 0.005
+        description_y = y - 0.025
 
-    return float(data[1]), float(data[2]), float(data[3])
+        point_code = " 0\nINSERT\n 8\nPoints\n 66\n1\n 2\n" \
+                     "POINTNAMEBLOCK\n 10\n" \
+                     "{2:.4f}\n" \
+                     " 20\n" \
+                     "{3:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "POINT_NUMBER\n 1\n" \
+                     "{0}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n" \
+                     " 20\n" \
+                     "{6:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "ELEVATION\n 1\n" \
+                     "{4:.3f}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n" \
+                     " 20\n" \
+                     "{7:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "DESCRIPTION\n 1\n" \
+                     "{1}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n"  \
+                     " 20\n" \
+                     "{8:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     "0\nSEQEND\n 6\nCONTINUOUS\n".format(num, code, x, y, z,
+                                                          x_offset, point_number_y,
+                                                          elevation_y, description_y)
+        return point_code
 
-
-def format_fname(fname, ftype=None):
-
-    fnew = '{}.{}'.format(os.path.splitext(fname)[0], ftype.upper())
-    if os.path.exists(fnew):
-        index = 1
-        ftemplate = '{}({{}}).{}'.format(os.path.splitext(fname)[0], ftype.upper())
-        fnew = ftemplate.format(index)
-        while os.path.exists(fnew):
-            index += 1
-            fnew = ftemplate.format(index)
-        return fnew
-    else:
-        return fnew
+    def create(self, fname):
+        dxf_fname = format_fname(fname, 'dxf')
+        with open(dxf_fname, 'w') as dxf:
+            dxf.write(self.start)
+            for i, pnt in enumerate(self.points):
+                data = pnt.split(',')
+                x, y, z = self.convert2float(data)
+                pnt_data = self._make_pointnameblock(i + 1, data[0], x, y, z)
+                dxf.write(pnt_data)
+            dxf.write(self.end)
+        return
 
 
 def get_coords(content):
@@ -162,28 +198,13 @@ def get_points(path, ts):
     return points
 
 
-def make_dxf(fname, points):
-
-    dxf_fname = format_fname(fname, 'dxf')
-    with open(dxf_fname, 'w') as dxf:
-        dxf.write(begin_dxf())
-        for i, pnt in enumerate(points):
-            data = pnt.split(',')
-            x, y, z = format_numbers(data)
-            pnt_data = make_pointnameblock(i + 1, data[0], x, y, z)
-            dxf.write(pnt_data)
-        dxf.write(end_dxf())
-
-    return dxf_fname
-
-
 def make_pnt(fname, points):
 
     pnt_fname = format_fname(fname, 'pnt')    
     with open(pnt_fname, 'w') as pnt:
         for point in points:
             data = point.split(',')
-            x, y, z = format_numbers(data)
+            x, y, z = convert2float(data)
             pnt.write('{},{:.4f},{:.4f},{:.4f},\n'.format(data[0], x, y, z))
 
     return pnt_fname
@@ -289,19 +310,19 @@ def get_lines(fname, search=None, datum=True, multi=False):
                     print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
-                    data = format_numbers(split_line)
+                    data = convert2float(split_line)
             elif datum:
                 if 'datum' in line.lower():
                     print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
-                    data = format_numbers(split_line)
+                    data = convert2float(split_line)
             else:
                 if search in line:
                     print(line.replace(',', ', '))
                     split_line = line.split(',')
                     pnt_name = split_line[0]
-                    data = format_numbers(split_line)
+                    data = convert2float(split_line)
             if data:
                 if multi:
                     if pnt_name in coords:
@@ -499,4 +520,8 @@ def main():
 
 if __name__ == '__main__':
 
-    main()
+    # main()
+    path = 'TEST'
+    d = os.path.join(path, 'DIR')
+    f = os.path.join(path, '07-19-18.dxf')
+    dxf = DXF(f)
