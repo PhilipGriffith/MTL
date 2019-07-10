@@ -11,7 +11,6 @@ class Utils:
     @staticmethod
     def format_fname(fname, ftype):
         fname = os.path.splitext(fname)[0]
-        ftype = ftype.lower()
         fnew = '{}.{}'.format(fname, ftype)
         if os.path.exists(fnew):
             index = 1
@@ -24,14 +23,8 @@ class Utils:
         else:
             return fnew
 
-    @staticmethod
-    def _valid_ftype(f):
-        valid_ftypes = ('.dxf', '.pnt', '.csv')
-        ext = os.path.splitext(f)[1]
-        return ext if ext in valid_ftypes else None
 
-
-class Data(Utils):
+class Data:
 
     def __init__(self, points=None):
         self.points = []
@@ -46,21 +39,21 @@ class Data(Utils):
                     if ftype:
                         fpath = os.path.join(root, f)
                         pnt = self._get_data(fpath, ftype)
-                        self.points.append(pnt)
+                        self.points.extend(pnt)
                         print('{} added'.format(fpath))
         elif os.path.isfile(data):
             ftype = self._valid_ftype(data)
             if ftype:
                 pnt = self._get_data(data, ftype)
-                self.points.append(pnt)
+                self.points.extend(pnt)
                 print('{} added'.format(data))
         return
 
     def _get_data(self, fpath, ftype):
 
+        data = []
         with open(fpath) as f:
             if ftype == '.pnt':
-                data = []
                 for line in f:
                     pnt = self.get_data_topcon(line)
                     data.append(pnt)
@@ -68,7 +61,6 @@ class Data(Utils):
                 lines = f.readlines()
                 data = self._get_data_dxf(lines)
             elif ftype == '.csv':
-                data = []
                 for line in f:
                     pnt = self._get_data_nikon(line)
                     data.append(pnt)
@@ -107,18 +99,25 @@ class Data(Utils):
         return '{},{},{},{}'.format(desc, e, n, z)
 
     @staticmethod
-    def _get_coords(content):
+    def _get_coords(lines):
 
-        desc = content[54].strip().upper()
-        e = float(content[2])
-        n = float(content[4])
-        z = float(content[6])
+        desc = lines[54].strip().upper()
+        e = float(lines[2])
+        n = float(lines[4])
+        z = float(lines[6])
         return [desc, e, n, z]
 
+    @staticmethod
+    def _valid_ftype(f):
+        valid_ftypes = ('.dxf', '.pnt', '.csv')
+        ext = os.path.splitext(f)[1]
+        return ext if ext in valid_ftypes else None
 
-class DXF():
 
-    def __init__(self):
+class DXF(Utils):
+
+    def __init__(self, points):
+        self.points = points
         self.start = "0\nSECTION\n2\nHEADER\n 9\n$ACADVER\n 1\nAC1009\n 9\n$EXTMIN\n 10\n" \
             "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$EXTMAX\n 10\n" \
             "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$LIMMIN\n 10\n" \
@@ -189,7 +188,7 @@ class DXF():
         return point_code
 
     def create(self, fname):
-        dxf_fname = format_fname(fname, 'dxf')
+        dxf_fname = self.format_fname(fname, 'dxf')
         with open(dxf_fname, 'w') as dxf:
             dxf.write(self.start)
             for i, pnt in enumerate(self.points):
@@ -201,101 +200,19 @@ class DXF():
         return
 
 
-def make_pnt(fname, points):
+class PNT(Utils):
 
-    pnt_fname = format_fname(fname, 'pnt')    
-    with open(pnt_fname, 'w') as pnt:
-        for point in points:
-            data = point.split(',')
-            x, y, z = convert2float(data)
-            pnt.write('{},{:.4f},{:.4f},{:.4f},\n'.format(data[0], x, y, z))
+    def __init__(self, points):
+        self.points = points
 
-    return pnt_fname
-
-
-# def processor(fname):
-#
-#     points = []
-#     ftypes = ['.csv', '.pnt', '.dxf']
-#     fl = fname.lower()
-#     if os.path.splitext(fl)[1] in ftypes:
-#         path = os.path.join('./', fname)
-#         try:
-#             if fl.endswith('.csv'):
-#                 points = get_points(path, 'Nikon')
-#             elif fl.endswith('.pnt'):
-#                 points = get_points(path, 'TopCon')
-#             else:
-#                 points = get_points(path, 'DXF')
-#         except IOError:
-#             return None
-#
-#     return points
-
-
-def convert_to_dxf(fname):
-
-    f_lower = fname.lower()
-    if f_lower.endswith('.csv') or f_lower.endswith('.pnt'):
-        points = processor(fname)
-        if points:
-            dxf_name = make_dxf(fname, points)
-            print('\n  {} was converted to {}'.format(fname, dxf_name))
-        else:
-            print('\n  {} does not exist.'.format(fname))
-            convert_single('dxf')
-    elif f_lower.endswith('.dxf') or f_lower.endswith('.py'):
-        pass
-    else:
-        print('\n  {} is not a valid file type.'.format(fname))
-        convert_single('dxf')
-        
-    return
-
-
-def convert_to_pnt(fname):
-
-    f_lower = fname.lower()
-    if f_lower.endswith('.csv') or f_lower.endswith('.dxf'):
-        points = processor(fname)
-        if points:
-            pnt_name = make_pnt(fname, points)
-            print('\n  {} was converted to {}'.format(fname, pnt_name))
-        else:
-            print('\n  {} does not exist.'.format(fname))
-            convert_single('pnt')
-    elif f_lower.endswith('.pnt') or f_lower.endswith('.py'):
-        pass
-    else:
-        print('\n  {} is not a valid file type.'.format(fname))
-        convert_single('pnt')
-
-    return
-
-
-def convert_single(ftype=None):
-
-    fname = input('Enter the file to convert: ')
-
-    if fname:
-        if ftype == 'dxf':
-            convert_to_dxf(fname)
-        elif ftype == 'pnt':
-            convert_to_pnt(fname)
-
-    return
-
-
-def convert_all(ftype=None):
-
-    for root, dirs, fnames in os.walk('./'):
-        for fname in fnames:
-            if ftype == 'dxf':
-                convert_to_dxf(fname)
-            elif ftype == 'pnt':
-                convert_to_pnt(fname)
-
-    return
+    def create(self, fname):
+        pnt_fname = self.format_fname(fname, 'pnt')
+        with open(pnt_fname, 'w') as pnt:
+            for point in self.points:
+                data = point.split(',')
+                x, y, z = self.convert2float(data)
+                pnt.write('{},{:.4f},{:.4f},{:.4f},\n'.format(data[0], x, y, z))
+        return
 
 
 def get_lines(fname, search=None, datum=True, multi=False):
@@ -304,9 +221,7 @@ def get_lines(fname, search=None, datum=True, multi=False):
     x = []
     y = []
     z = []
-    points = processor(fname)
-    if points:
-        for line in points:
+    for line in points:
             data = None
             if datum and search:
                 if search in line and 'datum' in line.lower():
@@ -528,5 +443,3 @@ if __name__ == '__main__':
     d = os.path.join(path, 'DIR')
     f = os.path.join(path, '07-19-18.dxf')
     dxf = Data(f)
-
-    print(dxf.points)
