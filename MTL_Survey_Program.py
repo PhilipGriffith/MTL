@@ -24,7 +24,104 @@ class Utils:
             return fnew
 
 
-class Data:
+class PNT(Utils):
+
+    def create_pnt(self, fname):
+        pnt_fname = self.format_fname(fname, 'pnt')
+        with open(pnt_fname, 'w') as pnt:
+            for point in self.points:
+                data = point.split(',')
+                x, y, z = self.convert2float(data)
+                pnt.write('{},{:.4f},{:.4f},{:.4f},\n'.format(data[0], x, y, z))
+        return
+
+
+class DXF(Utils):
+
+    def __init__(self):
+        self.start = "0\nSECTION\n2\nHEADER\n 9\n$ACADVER\n 1\nAC1009\n 9\n$EXTMIN\n 10\n" \
+            "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$EXTMAX\n 10\n" \
+            "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$LIMMIN\n 10\n" \
+            "0.00000000\n 20\n0.00000000\n 9\n$LIMMAX\n 10\n12.00000000\n 20\n"\
+            "9.00000000\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n 0\nTABLE\n 2\nLAYER\n" \
+            " 0\nLAYER\n 2\n0\n 70\n0\n 62\n7\n 6\nCONTINUOUS\n 0\nLAYER\n 2\n" \
+            "Points\n 70\n0\n 62\n7\n 6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n0\n" \
+            "SECTION\n 2\nBLOCKS\n 0\nBLOCK\n 8\n0\n 70\n2\n 3\nPOINTNAMEBLOCK\n" \
+            " 2\nPOINTNAMEBLOCK\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
+            " 0\nPOINT\n 8\n0\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
+            " 0\nATTDEF\n 8\n0\n 40\n5.00000000\n 70\n0\n 3\nPOINT_NUMBER\n 2\n" \
+            "POINT_NUMBER\n 1\n1\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
+            " 0\nATTDEF\n 8\n0\n 40\n0.01000000\n 70\n0\n 3\nELEVATION\n 2\n" \
+            "ELEVATION\n 1\n\n 10\n0.00000000\n 20\n-0.02000000\n 30\n0.00000000\n" \
+            " 0\nATTDEF\n 8\n0\n 40\n0.01000000\n 70\n0\n 3\nDESCRIPTION\n 2\n" \
+            "DESCRIPTION\n 1\n\n 10\n0.00000000\n 20\n-0.04000000\n 30\n0.00000000\n" \
+            "0\nENDBLK\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"
+        self.end = "0\nENDSEC\n0\nEOF\n"
+
+    @staticmethod
+    def _make_pointnameblock(num, code, x, y, z):
+
+        x_offset = x + 0.005
+        point_number_y = y + 0.015
+        elevation_y = y - 0.005
+        description_y = y - 0.025
+
+        point_code = " 0\nINSERT\n 8\nPoints\n 66\n1\n 2\n" \
+                     "POINTNAMEBLOCK\n 10\n" \
+                     "{2:.4f}\n" \
+                     " 20\n" \
+                     "{3:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "POINT_NUMBER\n 1\n" \
+                     "{0}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n" \
+                     " 20\n" \
+                     "{6:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "ELEVATION\n 1\n" \
+                     "{4:.3f}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n" \
+                     " 20\n" \
+                     "{7:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
+                     " 70\n0\n 2\n" \
+                     "DESCRIPTION\n 1\n" \
+                     "{1}\n" \
+                     " 10\n" \
+                     "{5:.4f}\n"  \
+                     " 20\n" \
+                     "{8:.4f}\n" \
+                     " 30\n" \
+                     "{4:.4f}\n" \
+                     "0\nSEQEND\n 6\nCONTINUOUS\n".format(num, code, x, y, z,
+                                                          x_offset, point_number_y,
+                                                          elevation_y, description_y)
+        return point_code
+
+    def create_dxf(self, fname):
+        dxf_fname = self.format_fname(fname, 'dxf')
+        with open(dxf_fname, 'w') as dxf:
+            dxf.write(self.start)
+            for i, pnt in enumerate(self.points):
+                data = pnt.split(',')
+                x, y, z = self.convert2float(data)
+                pnt_data = self._make_pointnameblock(i + 1, data[0], x, y, z)
+                dxf.write(pnt_data)
+            dxf.write(self.end)
+        return
+
+
+class Points(DXF, PNT):
 
     def __init__(self, points=None):
         self.points = []
@@ -113,106 +210,6 @@ class Data:
         ext = os.path.splitext(f)[1]
         return ext if ext in valid_ftypes else None
 
-
-class DXF(Utils):
-
-    def __init__(self, points):
-        self.points = points
-        self.start = "0\nSECTION\n2\nHEADER\n 9\n$ACADVER\n 1\nAC1009\n 9\n$EXTMIN\n 10\n" \
-            "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$EXTMAX\n 10\n" \
-            "0.00000000\n 20\n0.00000000\n 30\n0.00000000\n 9\n$LIMMIN\n 10\n" \
-            "0.00000000\n 20\n0.00000000\n 9\n$LIMMAX\n 10\n12.00000000\n 20\n"\
-            "9.00000000\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n 0\nTABLE\n 2\nLAYER\n" \
-            " 0\nLAYER\n 2\n0\n 70\n0\n 62\n7\n 6\nCONTINUOUS\n 0\nLAYER\n 2\n" \
-            "Points\n 70\n0\n 62\n7\n 6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n0\n" \
-            "SECTION\n 2\nBLOCKS\n 0\nBLOCK\n 8\n0\n 70\n2\n 3\nPOINTNAMEBLOCK\n" \
-            " 2\nPOINTNAMEBLOCK\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
-            " 0\nPOINT\n 8\n0\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
-            " 0\nATTDEF\n 8\n0\n 40\n5.00000000\n 70\n0\n 3\nPOINT_NUMBER\n 2\n" \
-            "POINT_NUMBER\n 1\n1\n 10\n0.00000000\n 20\n0.00000000\n 30\n0.00000000\n" \
-            " 0\nATTDEF\n 8\n0\n 40\n0.01000000\n 70\n0\n 3\nELEVATION\n 2\n" \
-            "ELEVATION\n 1\n\n 10\n0.00000000\n 20\n-0.02000000\n 30\n0.00000000\n" \
-            " 0\nATTDEF\n 8\n0\n 40\n0.01000000\n 70\n0\n 3\nDESCRIPTION\n 2\n" \
-            "DESCRIPTION\n 1\n\n 10\n0.00000000\n 20\n-0.04000000\n 30\n0.00000000\n" \
-            "0\nENDBLK\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n"
-        self.end = "0\nENDSEC\n0\nEOF\n"
-
-    @staticmethod
-    def _make_pointnameblock(num, code, x, y, z):
-
-        x_offset = x + 0.005
-        point_number_y = y + 0.015
-        elevation_y = y - 0.005
-        description_y = y - 0.025
-
-        point_code = " 0\nINSERT\n 8\nPoints\n 66\n1\n 2\n" \
-                     "POINTNAMEBLOCK\n 10\n" \
-                     "{2:.4f}\n" \
-                     " 20\n" \
-                     "{3:.4f}\n" \
-                     " 30\n" \
-                     "{4:.4f}\n" \
-                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                     " 70\n0\n 2\n" \
-                     "POINT_NUMBER\n 1\n" \
-                     "{0}\n" \
-                     " 10\n" \
-                     "{5:.4f}\n" \
-                     " 20\n" \
-                     "{6:.4f}\n" \
-                     " 30\n" \
-                     "{4:.4f}\n" \
-                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                     " 70\n0\n 2\n" \
-                     "ELEVATION\n 1\n" \
-                     "{4:.3f}\n" \
-                     " 10\n" \
-                     "{5:.4f}\n" \
-                     " 20\n" \
-                     "{7:.4f}\n" \
-                     " 30\n" \
-                     "{4:.4f}\n" \
-                     " 0\nATTRIB\n 8\nPoints\n 40\n0.01000000\n" \
-                     " 70\n0\n 2\n" \
-                     "DESCRIPTION\n 1\n" \
-                     "{1}\n" \
-                     " 10\n" \
-                     "{5:.4f}\n"  \
-                     " 20\n" \
-                     "{8:.4f}\n" \
-                     " 30\n" \
-                     "{4:.4f}\n" \
-                     "0\nSEQEND\n 6\nCONTINUOUS\n".format(num, code, x, y, z,
-                                                          x_offset, point_number_y,
-                                                          elevation_y, description_y)
-        return point_code
-
-    def create(self, fname):
-        dxf_fname = self.format_fname(fname, 'dxf')
-        with open(dxf_fname, 'w') as dxf:
-            dxf.write(self.start)
-            for i, pnt in enumerate(self.points):
-                data = pnt.split(',')
-                x, y, z = self.convert2float(data)
-                pnt_data = self._make_pointnameblock(i + 1, data[0], x, y, z)
-                dxf.write(pnt_data)
-            dxf.write(self.end)
-        return
-
-
-class PNT(Utils):
-
-    def __init__(self, points):
-        self.points = points
-
-    def create(self, fname):
-        pnt_fname = self.format_fname(fname, 'pnt')
-        with open(pnt_fname, 'w') as pnt:
-            for point in self.points:
-                data = point.split(',')
-                x, y, z = self.convert2float(data)
-                pnt.write('{},{:.4f},{:.4f},{:.4f},\n'.format(data[0], x, y, z))
-        return
 
 
 def get_lines(fname, search=None, datum=True, multi=False):
@@ -442,4 +439,6 @@ if __name__ == '__main__':
     path = 'TEST'
     d = os.path.join(path, 'DIR')
     f = os.path.join(path, '07-19-18.dxf')
-    dxf = Data(f)
+    out = os.path.join(path, 'test.pnt')
+    p = Points(f)
+    p.create_pnt(out)
