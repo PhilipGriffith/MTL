@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class Utils:
@@ -121,7 +123,55 @@ class DXF(Utils):
         return
 
 
-class Points(DXF, PNT):
+class Stats(Utils):
+
+    def datum(self, name, vis=False):
+        x = []
+        y = []
+        z = []
+        for pnt in self.points:
+            split_data = pnt.split(',')
+            pnt_name = split_data[0].upper()
+            data = self.convert2float(split_data)
+            if name.upper() in pnt_name and 'DATUM' in pnt_name:
+                x.append(data[0])
+                y.append(data[1])
+                z.append(data[2])
+
+        self._text(name, x, y, z)
+        if vis:
+            self._graphic(name, x, y, z)
+        return
+
+    def number(self, num, vis=False):
+        pass
+
+    @staticmethod
+    def _text(name, x, y, z):
+
+        print('\n{} result(s) found for {}:\n'.format(len(x), name))
+        print('\t\t\tNorthing\tEasting\t\tElevation')
+        print('-' * 60)
+        print('Mean\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(np.mean(y), np.mean(x), np.mean(z)))
+        print('Std Dev.\t{:.3f}\t\t{:.3f}\t\t{:.3f}'.format(np.std(y), np.std(x), np.std(z)))
+        print()
+        print('Min\t\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(min(y), min(x), min(z)))
+        print('Max\t\t\t{:.3f}\t{:.3f}\t{:.3f}'.format(max(y), max(x), max(z)))
+
+    @staticmethod
+    def _graphic(name, x, y, z):
+
+        fig = plt.figure()
+        ax = plt.axes(projection="3d")
+        ax.scatter3D(x, y, z)
+        ax.set_title(name)
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        plt.show()
+        return
+
+
+class Points(Stats, DXF, PNT):
 
     def __init__(self, points=None):
         self.points = []
@@ -209,7 +259,6 @@ class Points(DXF, PNT):
         valid_ftypes = ('.dxf', '.pnt', '.csv')
         ext = os.path.splitext(f)[1]
         return ext if ext in valid_ftypes else None
-
 
 
 def get_lines(fname, search=None, datum=True, multi=False):
@@ -441,4 +490,4 @@ if __name__ == '__main__':
     f = os.path.join(path, '07-19-18.dxf')
     out = os.path.join(path, 'test.pnt')
     p = Points(f)
-    p.create_pnt(out)
+    p.datum('MM', vis=True)
